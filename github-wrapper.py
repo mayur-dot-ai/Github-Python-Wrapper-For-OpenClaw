@@ -634,7 +634,7 @@ def main():
             org = sys.argv[2]
             repo_name = sys.argv[3]
             description = sys.argv[4] if len(sys.argv) > 4 else ""
-            private = sys.argv[5].lower() == 'true' if len(sys.argv) > 5 else False
+            private = sys.argv[5].lower() in ('true', 'private', '1', 'yes') if len(sys.argv) > 5 else False
             result = repo_create(org, repo_name, description, private)
         
         elif action == 'repo-list':
