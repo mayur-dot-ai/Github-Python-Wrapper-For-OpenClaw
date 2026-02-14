@@ -15,6 +15,96 @@ A CLI wrapper around [PyGithub](https://github.com/PyGithub/PyGithub) designed f
 - Provides a simple CLI interface with JSON output
 - Wraps 22 common GitHub operations
 
+## Quick Start for OpenClaw Users
+
+### Step 1: Get GitHub Credentials
+
+You have two options:
+
+**Option A: GitHub App (Recommended for orgs)**
+1. Go to your GitHub org → Settings → Developer Settings → GitHub Apps
+2. Create a new GitHub App with these permissions:
+   - Repository: Read & Write (contents, issues, pull requests)
+   - Organization: Read (members) if needed
+3. Install the app on your org
+4. Note down: `App ID`, `Installation ID`, and download the private key `.pem` file
+
+**Option B: Personal Access Token (Simpler, for personal repos)**
+1. Go to GitHub → Settings → Developer Settings → Personal Access Tokens → Fine-grained tokens
+2. Create a token with repo access
+3. Copy the token (starts with `ghp_`)
+
+### Step 2: Install the Wrapper
+
+Copy this prompt to your OpenClaw agent:
+
+```
+Install the GitHub wrapper for me:
+
+1. Create the directory and download:
+   mkdir -p ~/github-mcp
+   curl -o ~/github-mcp/github-wrapper.py https://raw.githubusercontent.com/mayur-dot-ai/Github-Python-Wrapper-For-OpenClaw/main/github-wrapper.py
+   chmod +x ~/github-mcp/github-wrapper.py
+
+2. Install PyGithub:
+   pip install PyGithub
+
+3. Set up credentials in ~/.bashrc (replace with your values):
+
+   # For GitHub App:
+   export GITHUB_APP_ID="your-app-id"
+   export GITHUB_INSTALLATION_ID="your-installation-id"  
+   export GITHUB_APP_PRIVATE_KEY="$(cat ~/.openclaw/github-app-key.pem)"
+
+   # OR for Personal Access Token:
+   export GITHUB_TOKEN="ghp_your_token_here"
+
+4. Reload: source ~/.bashrc
+
+5. Test it:
+   python3 ~/github-mcp/github-wrapper.py repo-list your-org-or-username
+```
+
+### Step 3: Store Your Private Key (GitHub App only)
+
+If using a GitHub App, save your `.pem` file:
+
+```bash
+# Copy your downloaded private key to OpenClaw
+mkdir -p ~/.openclaw
+# Paste the key contents:
+cat > ~/.openclaw/github-app-key.pem << 'EOF'
+-----BEGIN RSA PRIVATE KEY-----
+(your key content here)
+-----END RSA PRIVATE KEY-----
+EOF
+chmod 600 ~/.openclaw/github-app-key.pem
+```
+
+### Step 4: Add to Your Agent's Memory
+
+Add this to your `TOOLS.md` or `MEMORY.md`:
+
+```markdown
+## GitHub Wrapper
+
+**Location:** `~/github-mcp/github-wrapper.py`
+**Auth:** GitHub App (App ID: XXXX, Installation ID: XXXX)
+**Org:** your-org-name
+
+### Usage
+python3 ~/github-mcp/github-wrapper.py <action> [args]
+
+### Common Actions
+- `repo-list <org>` — List repos
+- `repo-create <org> <name> "<desc>" private` — Create private repo
+- `file-create-or-update <org> <repo> <path> "<content>" "<msg>"` — Push file
+- `issue-create <org> <repo> "<title>" "<body>"` — Create issue
+- `issue-comment <org> <repo> <num> "<body>"` — Comment on issue
+```
+
+---
+
 ## Why Not Use PyGithub Directly?
 
 You can! But for AI agent workflows:
@@ -28,18 +118,9 @@ You can! But for AI agent workflows:
 
 If your agent can write Python, use PyGithub directly. If your agent uses shell commands (`exec`), this wrapper is simpler.
 
-## Installation
+---
 
-```bash
-# Clone
-git clone https://github.com/mayur-dot-ai/github-wrapper-openclaw.git
-cd github-wrapper-openclaw
-
-# Install dependency
-pip install PyGithub
-```
-
-## Authentication
+## Authentication Details
 
 ### Option 1: GitHub App (Recommended for Orgs)
 
@@ -49,13 +130,20 @@ export GITHUB_INSTALLATION_ID="your-installation-id"
 export GITHUB_APP_PRIVATE_KEY="$(cat /path/to/private-key.pem)"
 ```
 
+**Where to find these:**
+- `GITHUB_APP_ID`: GitHub App settings page → App ID
+- `GITHUB_INSTALLATION_ID`: Org settings → Installed GitHub Apps → Click app → URL contains installation ID
+- Private key: Downloaded when you created the app (or generate a new one in app settings)
+
 ### Option 2: Personal Access Token
 
 ```bash
 export GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
 ```
 
-## Usage
+---
+
+## Usage Reference
 
 ```bash
 python github-wrapper.py <action> [args]
@@ -66,8 +154,8 @@ python github-wrapper.py <action> [args]
 # List repos in org
 python github-wrapper.py repo-list myorg
 
-# Create repo
-python github-wrapper.py repo-create myorg new-repo "Description" false
+# Create repo (use 'private' or 'true' for private)
+python github-wrapper.py repo-create myorg new-repo "Description" private
 
 # Delete repo
 python github-wrapper.py repo-delete myorg repo-name
@@ -169,16 +257,6 @@ All commands return JSON:
 // Error
 {"success": false, "error": "Not Found"}
 ```
-
-## Use with OpenClaw
-
-In your OpenClaw agent, call via `exec`:
-
-```
-exec python3 /path/to/github-wrapper.py issue-create myorg myrepo "New feature request" "Details..."
-```
-
-The wrapper handles authentication from environment variables automatically.
 
 ## License
 
